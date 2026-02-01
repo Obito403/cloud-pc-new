@@ -14,11 +14,12 @@ jobs:
       run: |
         winget install -e --id Tailscale.Tailscale --accept-package-agreements --accept-source-agreements
 
-    - name: Connect Tailscale
+    - name: Connect Tailscale (Unattended)
       shell: powershell
       run: |
         & "C:\Program Files\Tailscale\tailscale.exe" up `
           --authkey=${{ secrets.TAILSCALE_AUTHKEY }} `
+          --unattended `
           --accept-dns=false `
           --accept-routes=false
 
