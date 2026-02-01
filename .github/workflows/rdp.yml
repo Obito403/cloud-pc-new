@@ -12,8 +12,8 @@ jobs:
     - name: Install Tailscale
       shell: powershell
       run: |
-        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.exe -OutFile tailscale.exe
-        Start-Process tailscale.exe -ArgumentList "/silent" -Wait
+        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.msi -OutFile tailscale.msi
+        Start-Process msiexec.exe -ArgumentList "/i tailscale.msi /quiet /norestart" -Wait
 
     - name: Connect Tailscale
       shell: powershell
@@ -26,7 +26,8 @@ jobs:
     - name: Enable RDP
       shell: powershell
       run: |
-        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
+          -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
     - name: Set Password
