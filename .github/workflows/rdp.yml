@@ -14,10 +14,10 @@ jobs:
       run: |
         winget install -e --id Tailscale.Tailscale --accept-package-agreements --accept-source-agreements
 
-    - name: Connect Tailscale (Authkey - Option B)
+    - name: Connect Tailscale (Authkey - Option B FIX)
       shell: powershell
       run: |
-        "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --unattended --accept-dns=false --accept-routes=false
+        & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --unattended --accept-dns=false --accept-routes=false
 
     - name: Enable RDP
       shell: powershell
