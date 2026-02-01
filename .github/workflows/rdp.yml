@@ -1,0 +1,35 @@
+name: Free Cloud PC RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Install Tailscale
+      shell: powershell
+      run: |
+        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.exe -OutFile tailscale.exe
+        Start-Process tailscale.exe -ArgumentList "/silent" -Wait
+
+    - name: Connect Tailscale
+      shell: powershell
+      run: |
+        & "C:\Program Files\Tailscale\tailscale.exe" up `
+          --authkey=${{ secrets.TAILSCALE_AUTHKEY }} `
+          --accept-dns=false `
+          --accept-routes=false
+
+    - name: Enable RDP
+      shell: powershell
+      run: |
+        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+    - name: Set Password
+      shell: powershell
+      run: |
+        net user runneradmin CloudPC@123
