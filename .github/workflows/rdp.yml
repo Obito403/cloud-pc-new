@@ -9,11 +9,10 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Install Tailscale
+    - name: Install Tailscale (winget)
       shell: powershell
       run: |
-        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.msi -OutFile tailscale.msi
-        Start-Process msiexec.exe -ArgumentList "/i tailscale.msi /quiet /norestart" -Wait
+        winget install -e --id Tailscale.Tailscale --accept-package-agreements --accept-source-agreements
 
     - name: Connect Tailscale
       shell: powershell
