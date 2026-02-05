@@ -9,13 +9,14 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Download & Install Tailscale (Direct MSI – Stable)
+    - name: Download & Install Tailscale (Official EXE)
       shell: powershell
       run: |
-        $url = "https://pkgs.tailscale.com/stable/tailscale-setup-full.msi"
-        $out = "$env:TEMP\tailscale.msi"
+        $url = "https://pkgs.tailscale.com/stable/tailscale-setup.exe"
+        $out = "$env:TEMP\tailscale.exe"
         Invoke-WebRequest $url -OutFile $out
-        Start-Process msiexec.exe -ArgumentList "/i `"$out`" /qn" -Wait
+        Start-Process $out -ArgumentList "/silent" -Wait
+        Start-Sleep -Seconds 15
 
     - name: Connect Tailscale (Unattended)
       shell: powershell
@@ -51,29 +52,13 @@ jobs:
       run: |
         powercfg /setactive SCHEME_MIN
 
-    - name: Disable Windows Search Indexing
-      shell: powershell
-      run: |
-        Stop-Service WSearch -Force
-        Set-Service WSearch -StartupType Disabled
-
-    - name: Disable SysMain (Superfetch)
-      shell: powershell
-      run: |
-        Stop-Service SysMain -Force
-        Set-Service SysMain -StartupType Disabled
-
-    - name: Disable Windows Update
-      shell: powershell
-      run: |
-        Stop-Service wuauserv -Force
-        Set-Service wuauserv -StartupType Disabled
-
     - name: Boost RDP Responsiveness
       shell: powershell
       run: |
-        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
-        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v SystemResponsiveness /t REG_DWORD /d 0 /f
 
     - name: Set RDP Password
       shell: powershell
@@ -88,5 +73,5 @@ jobs:
     - name: Keep VM Alive
       shell: powershell
       run: |
-        Write-Host "✅ RDP READY — CONNECT NOW"
+        Write-Host "✅ RDP READY — DO NOT CLOSE ACTIONS PAGE"
         while ($true) { Start-Sleep -Seconds 60 }
