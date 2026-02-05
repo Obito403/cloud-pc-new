@@ -9,10 +9,11 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Install Tailscale (Winget Stable)
+    - name: Install Tailscale (Chocolatey – Stable)
       shell: powershell
       run: |
-        winget install -e --id Tailscale.Tailscale --accept-package-agreements --accept-source-agreements
+        choco install tailscale -y
+        Start-Sleep -Seconds 10
 
     - name: Connect Tailscale (Unattended)
       shell: powershell
@@ -26,7 +27,8 @@ jobs:
     - name: Enable RDP
       shell: powershell
       run: |
-        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
+          -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
     - name: Disable RDP Idle Timeout
@@ -35,7 +37,7 @@ jobs:
         reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxIdleTime /t REG_DWORD /d 0 /f
         reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxDisconnectionTime /t REG_DWORD /d 0 /f
 
-    - name: Prevent Sleep and Lock
+    - name: Prevent Sleep & Lock
       shell: powershell
       run: |
         powercfg /change standby-timeout-ac 0
@@ -47,29 +49,13 @@ jobs:
       run: |
         powercfg /setactive SCHEME_MIN
 
-    - name: Disable Windows Search Indexing
-      shell: powershell
-      run: |
-        Stop-Service WSearch -Force
-        Set-Service WSearch -StartupType Disabled
-
-    - name: Disable SysMain (Superfetch)
-      shell: powershell
-      run: |
-        Stop-Service SysMain -Force
-        Set-Service SysMain -StartupType Disabled
-
-    - name: Disable Windows Update
-      shell: powershell
-      run: |
-        Stop-Service wuauserv -Force
-        Set-Service wuauserv -StartupType Disabled
-
     - name: Boost RDP Responsiveness
       shell: powershell
       run: |
-        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
-        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v SystemResponsiveness /t REG_DWORD /d 0 /f
 
     - name: Set RDP Password
       shell: powershell
