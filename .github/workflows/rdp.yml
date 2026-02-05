@@ -1,4 +1,4 @@
-name: Free Cloud PC RDP (Ultra Final Stable FIXED)
+name: Free Cloud PC RDP (Ultra Final Stable WORKING)
 
 on:
   workflow_dispatch:
@@ -9,14 +9,11 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Download & Install Tailscale (Official EXE)
+    - name: Install Tailscale (Chocolatey – Stable)
       shell: powershell
       run: |
-        $url = "https://pkgs.tailscale.com/stable/tailscale-setup.exe"
-        $out = "$env:TEMP\tailscale.exe"
-        Invoke-WebRequest $url -OutFile $out
-        Start-Process $out -ArgumentList "/silent" -Wait
-        Start-Sleep -Seconds 15
+        choco install tailscale -y
+        Start-Sleep -Seconds 10
 
     - name: Connect Tailscale (Unattended)
       shell: powershell
