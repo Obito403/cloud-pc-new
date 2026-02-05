@@ -1,4 +1,4 @@
-name: Free Cloud PC RDP (Final)
+name: Free Cloud PC RDP (Ultra Final)
 
 on:
   workflow_dispatch:
@@ -9,34 +9,90 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Install Tailscale
+    - name: Install Tailscale (Stable)
       shell: powershell
       run: |
-        winget install -e --id Tailscale.Tailscale --accept-package-agreements --accept-source-agreements
+        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.exe -OutFile ts.exe
+        Start-Process ts.exe -ArgumentList "/silent" -Wait
 
     - name: Connect Tailscale (Unattended)
       shell: powershell
       run: |
-        & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --unattended --accept-dns=false --accept-routes=false
+        & "C:\Program Files\Tailscale\tailscale.exe" up `
+          --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} `
+          --unattended `
+          --accept-dns=false `
+          --accept-routes=false
 
     - name: Enable RDP
       shell: powershell
       run: |
-        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Set-ItemProperty "HKLM:\System\CurrentControlSet\Control\Terminal Server" `
+          -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Disable RDP Timeout (IMPORTANT)
+    - name: Disable RDP Idle Timeout
       shell: powershell
       run: |
-        reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v IdleTimeout /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxIdleTime /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxDisconnectionTime /t REG_DWORD /d 0 /f
 
-    - name: Set Password
+    - name: Prevent Sleep & Lock
       shell: powershell
       run: |
-        net user runneradmin CloudPC@123
+        powercfg /change standby-timeout-ac 0
+        powercfg /change hibernate-timeout-ac 0
+        powercfg /change monitor-timeout-ac 0
+
+    - name: Force High Performance Power Plan
+      shell: powershell
+      run: |
+        powercfg /setactive SCHEME_MIN
+
+    - name: Disable Windows Search Indexing
+      shell: powershell
+      run: |
+        Stop-Service WSearch -Force
+        Set-Service WSearch -StartupType Disabled
+
+    - name: Disable SysMain (Superfetch)
+      shell: powershell
+      run: |
+        Stop-Service SysMain -Force
+        Set-Service SysMain -StartupType Disabled
+
+    - name: Disable Windows Update
+      shell: powershell
+      run: |
+        Stop-Service wuauserv -Force
+        Set-Service wuauserv -StartupType Disabled
+
+    - name: Disable Background Apps
+      shell: powershell
+      run: |
+        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
+          /v GlobalUserDisabled /t REG_DWORD /d 1 /f
+
+    - name: Boost RDP Responsiveness
+      shell: powershell
+      run: |
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v NetworkThrottlingIndex /t REG_DWORD /d 4294967295 /f
+        reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
+          /v SystemResponsiveness /t REG_DWORD /d 0 /f
+
+    - name: Set RDP Password (Secure)
+      shell: powershell
+      run: |
+        net user runneradmin ${{ secrets.RDP_PASSWORD }}
+
+    - name: Show Tailscale IP
+      shell: powershell
+      run: |
+        & "C:\Program Files\Tailscale\tailscale.exe" ip -4
 
     - name: Keep VM Alive (DO NOT CLOSE ACTIONS PAGE)
       shell: powershell
       run: |
-        Write-Host "RDP READY. Connect NOW."
+        Write-Host "✅ RDP READY — CONNECT NOW"
         while ($true) { Start-Sleep -Seconds 60 }
