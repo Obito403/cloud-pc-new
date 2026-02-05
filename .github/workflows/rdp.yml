@@ -1,4 +1,4 @@
-name: Free Cloud PC RDP (Ultra Final)
+name: Free Cloud PC RDP (Ultra Final Stable)
 
 on:
   workflow_dispatch:
@@ -9,11 +9,12 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: Install Tailscale (Stable)
+    - name: Install Tailscale (Winget – Stable)
       shell: powershell
       run: |
-        Invoke-WebRequest https://pkgs.tailscale.com/stable/tailscale-setup.exe -OutFile ts.exe
-        Start-Process ts.exe -ArgumentList "/silent" -Wait
+        winget install -e --id Tailscale.Tailscale `
+          --accept-package-agreements `
+          --accept-source-agreements
 
     - name: Connect Tailscale (Unattended)
       shell: powershell
@@ -34,8 +35,10 @@ jobs:
     - name: Disable RDP Idle Timeout
       shell: powershell
       run: |
-        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxIdleTime /t REG_DWORD /d 0 /f
-        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" /v MaxDisconnectionTime /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" `
+          /v MaxIdleTime /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" `
+          /v MaxDisconnectionTime /t REG_DWORD /d 0 /f
 
     - name: Prevent Sleep & Lock
       shell: powershell
@@ -67,12 +70,6 @@ jobs:
         Stop-Service wuauserv -Force
         Set-Service wuauserv -StartupType Disabled
 
-    - name: Disable Background Apps
-      shell: powershell
-      run: |
-        reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
-          /v GlobalUserDisabled /t REG_DWORD /d 1 /f
-
     - name: Boost RDP Responsiveness
       shell: powershell
       run: |
@@ -81,7 +78,7 @@ jobs:
         reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" `
           /v SystemResponsiveness /t REG_DWORD /d 0 /f
 
-    - name: Set RDP Password (Secure)
+    - name: Set RDP Password
       shell: powershell
       run: |
         net user runneradmin ${{ secrets.RDP_PASSWORD }}
@@ -91,8 +88,8 @@ jobs:
       run: |
         & "C:\Program Files\Tailscale\tailscale.exe" ip -4
 
-    - name: Keep VM Alive (DO NOT CLOSE ACTIONS PAGE)
+    - name: Keep VM Alive
       shell: powershell
       run: |
-        Write-Host "✅ RDP READY — CONNECT NOW"
+        Write-Host "✅ RDP READY — DO NOT CLOSE ACTIONS PAGE"
         while ($true) { Start-Sleep -Seconds 60 }
